@@ -7,6 +7,8 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
+#include <boost/lexical_cast.hpp>
 
 using std::begin;
 using std::end;
@@ -22,7 +24,7 @@ public:
     }
 };
 
-std::ofstream out_cache("cache.txt");
+std::ofstream out_cache;
 
 std::vector<path> directories;
 std::unordered_map<path, uintmax_t> file_sizes;
@@ -44,6 +46,42 @@ void read_dir(path dir) {
         }
     }
     std::sort(begin(directories), end(directories));
+}
+
+void read_cache() {
+    static const boost::regex r("(\\s*)(\\d+\\s)?(.+)");
+    int prev_level = 0;
+    path p;
+    std::string line;
+    for (std::ifstream in_cache("cache.txt"); std::getline(in_cache, line); ) {
+        boost::smatch m;
+        boost::regex_match(line, m, r);
+
+        int cur_level = m.str(1).length();
+        auto fragment = m.str(3);
+
+        if (cur_level == 0) {
+            p = fragment;
+        }
+        else if (cur_level == prev_level) {
+            p = p.parent_path() / fragment;
+        }
+        else if (cur_level == prev_level + 1) {
+            p /= fragment;
+        }
+        else for (int i = prev_level; i > cur_level; --i) {
+            p = p.parent_path();
+        }
+        auto size = m.str(2);
+        if (size.empty()) {
+            directories.push_back(p);
+        }
+        else {
+            uintmax_t file_size = std::stoull(size);
+            file_sizes[p] = file_size;
+        }
+        prev_level = cur_level;
+    }
 }
 
 int main(int argc, char **argv)
@@ -72,8 +110,14 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    for (auto dir : vars["directory"].as<std::vector<std::string>>()) {
-        read_dir(dir);
+    if (is_regular_file("cache.txt")) {
+        read_cache();
+    }
+    else {
+        out_cache.open("cache.txt");
+        for (auto dir : vars["directory"].as<std::vector<std::string>>()) {
+            read_dir(dir);
+        }
     }
 
     return 0;
