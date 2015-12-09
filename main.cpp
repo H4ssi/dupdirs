@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
+#include <fstream>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -21,18 +22,24 @@ public:
     }
 };
 
+std::ofstream out_cache("cache.txt");
+
 std::vector<path> directories;
 std::unordered_map<path, uintmax_t> file_sizes;
 
 void read_dir(path dir) {
     if (is_directory(dir)) {
         directories.push_back(dir);
+        out_cache << dir.generic_string() << std::endl;
         for (auto i = recursive_directory_iterator(dir); i != recursive_directory_iterator(); ++i) {
             if (is_regular_file(*i)) {
-                file_sizes[*i] = file_size(*i);
+                auto size = file_size(*i);
+                file_sizes[*i] = size;
+                out_cache << std::string(i.level() + 1, ' ') << size << ' ' << i->path().filename().generic_string() << std::endl;
             }
             else if (is_directory(*i)) {
                 directories.push_back(*i);
+                out_cache << std::string(i.level() + 1, ' ') << i->path().filename().generic_string() << std::endl;
             }
         }
     }
