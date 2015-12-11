@@ -30,8 +30,7 @@ public:
 std::vector<path> directories;
 std::unordered_map<path, uintmax_t> file_sizes;
 
-template <typename T>
-void read_dir(path dir, T & out_cache) {
+void read_dir(path dir, std::ostream & out_cache) {
     if (is_directory(dir)) {
         directories.push_back(dir);
         out_cache << dir.string() << std::endl;
