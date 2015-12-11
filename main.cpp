@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 #include <boost/program_options.hpp>
 #include <boost/iostreams/device/null.hpp>
@@ -116,18 +117,15 @@ int main(int argc, char **argv)
         read_cache(vars["cache"].as<std::string>());
     }
     else {
-        io::stream<io::file_sink> file_out;
+        std::unique_ptr<std::ostream> cache_out;
         if (vars.count("cache")) {
-            file_out.open(vars["cache"].as<std::string>());
+            cache_out = std::make_unique<io::stream<io::file_sink>>(vars["cache"].as<std::string>());
         }
-        io::stream<io::null_sink> null_out((io::null_sink()));
+        else {
+            cache_out = std::make_unique<io::stream<io::null_sink>>(io::null_sink());
+        }
         for (auto dir : vars["directory"].as<std::vector<std::string>>()) {
-            if (vars.count("cache")) {
-                read_dir(dir, file_out);
-            }
-            else {
-                read_dir(dir, null_out);
-            }
+            read_dir(dir, *cache_out);
         }
     }
 
