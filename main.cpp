@@ -20,13 +20,15 @@ namespace po = boost::program_options;
 namespace io = boost::iostreams;
 using namespace boost::filesystem;
 
-template<>
-class std::hash<path> : private std::hash<std::string> {
-public:
-    size_t operator()(path p) const {
-        return std::hash<std::string>::operator()(p.generic_string());
-    }
-};
+namespace std {
+    template<>
+    class hash<path> : private std::hash<std::string> {
+    public:
+        size_t operator()(path p) const {
+            return std::hash<std::string>::operator()(p.generic_string());
+        }
+    };
+}
 
 std::vector<path> directories;
 std::unordered_map<path, uintmax_t> file_sizes;
