@@ -105,8 +105,13 @@ int main(int argc, char **argv)
         po::notify(vars);
     }
     catch (po::error const & e) {
-        std::cout << desc << std::endl;
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << desc << std::endl
+            << "Error: " << e.what() << std::endl;
+        return 2;
+    }
+    if (vars.count("directory") == 0 && vars.count("cache") == 0) {
+        std::cerr << desc << std::endl
+            << "Error: neither directory to scan nor cache to load given" << std::endl;
         return 2;
     }
 
